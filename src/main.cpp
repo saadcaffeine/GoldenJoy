@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
 #include <NimBLEDevice.h>
 #include <NimBLEHIDDevice.h>
 #include <Wire.h>
@@ -9,12 +10,17 @@ constexpr char kDeviceName[] = "GoldenJoy Mouse";
 constexpr char kManufacturer[] = "GoldenJoy";
 
 constexpr uint8_t kNunchuckAddress = 0x52;
-constexpr int kSdaPin = 8;
-constexpr int kSclPin = 9;
+constexpr int kSdaPin = 4;
+constexpr int kSclPin = 5;
 constexpr uint32_t kI2cClockHz = 400000;
+
+constexpr int kStatusLedPin = 8;
+constexpr int kStatusLedCount = 1;
+constexpr uint8_t kStatusLedBrightness = 24;
 
 constexpr uint16_t kPollIntervalMs = 10;
 constexpr uint16_t kCalibrationSamples = 80;
+constexpr uint16_t kNunchuckRetryMs = 1000;
 
 constexpr int kDeadzone = 9;
 constexpr float kPointerGain = 0.11f;
@@ -27,11 +33,18 @@ constexpr bool kCIsRightClick = true;
 
 NimBLEHIDDevice* hidDevice = nullptr;
 NimBLECharacteristic* mouseInput = nullptr;
+Adafruit_NeoPixel statusLed(kStatusLedCount, kStatusLedPin, NEO_GRB + NEO_KHZ800);
+
 bool bleConnected = false;
+bool nunchuckReady = false;
+bool nunchuckReadFault = false;
+bool neutralReportPending = false;
 
 int joyCenterX = 128;
 int joyCenterY = 128;
 uint32_t lastPollMs = 0;
+uint32_t lastNunchuckRetryMs = 0;
+uint32_t lastStatusColor = 0xFFFFFFFF;
 
 const uint8_t kMouseReportMap[] = {
     0x05, 0x01,        // Usage Page (Generic Desktop)
@@ -64,15 +77,19 @@ const uint8_t kMouseReportMap[] = {
     0xC0               // End Collection
 };
 
+bool calibrateJoystick();
+
 class ServerCallbacks final : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* server) override {
     (void)server;
     bleConnected = true;
+    neutralReportPending = true;
     Serial.println("BLE central connected");
   }
 
   void onDisconnect(NimBLEServer*) override {
     bleConnected = false;
+    neutralReportPending = false;
     Serial.println("BLE central disconnected");
     NimBLEDevice::startAdvertising();
   }
@@ -84,6 +101,41 @@ struct NunchuckState {
   bool zPressed = false;
   bool cPressed = false;
 };
+
+void showStatusColor(uint8_t red, uint8_t green, uint8_t blue) {
+  const uint32_t color = statusLed.Color(red, green, blue);
+  if (color == lastStatusColor) {
+    return;
+  }
+
+  statusLed.setPixelColor(0, color);
+  statusLed.show();
+  lastStatusColor = color;
+}
+
+void updateStatusLed() {
+  const uint32_t now = millis();
+
+  if (!nunchuckReady) {
+    const bool on = (now / 500) % 2 == 0;
+    showStatusColor(on ? 24 : 0, on ? 18 : 0, 0);
+    return;
+  }
+
+  if (nunchuckReadFault) {
+    const bool on = (now / 250) % 2 == 0;
+    showStatusColor(on ? 32 : 0, 0, 0);
+    return;
+  }
+
+  if (!bleConnected) {
+    const bool on = (now / 500) % 2 == 0;
+    showStatusColor(0, 0, on ? 24 : 0);
+    return;
+  }
+
+  showStatusColor(0, 24, 0);
+}
 
 bool writeNunchuckRegister(uint8_t reg, uint8_t value) {
   Wire.beginTransmission(kNunchuckAddress);
@@ -99,6 +151,20 @@ bool initNunchuck() {
   const bool secondInit = writeNunchuckRegister(0xFB, 0x00);
   delay(10);
   return firstInit && secondInit;
+}
+
+bool markNunchuckReady() {
+  Serial.println("Nunchuck detected");
+  if (!calibrateJoystick()) {
+    nunchuckReady = false;
+    nunchuckReadFault = false;
+    Serial.println("Nunchuck calibration failed. Will retry.");
+    return false;
+  }
+
+  nunchuckReady = true;
+  nunchuckReadFault = false;
+  return true;
 }
 
 bool readNunchuck(NunchuckState& state) {
@@ -125,14 +191,17 @@ bool readNunchuck(NunchuckState& state) {
   return true;
 }
 
-void calibrateJoystick() {
+bool calibrateJoystick() {
   long xTotal = 0;
   long yTotal = 0;
   uint16_t samples = 0;
+  uint16_t attempts = 0;
+  constexpr uint16_t kMaxCalibrationAttempts = kCalibrationSamples * 4;
 
   Serial.println("Calibrating joystick center. Leave the Nunchuck at rest.");
-  while (samples < kCalibrationSamples) {
+  while (samples < kCalibrationSamples && attempts < kMaxCalibrationAttempts) {
     NunchuckState state;
+    attempts++;
     if (readNunchuck(state)) {
       xTotal += state.joyX;
       yTotal += state.joyY;
@@ -141,9 +210,27 @@ void calibrateJoystick() {
     delay(8);
   }
 
+  if (samples < kCalibrationSamples) {
+    return false;
+  }
+
   joyCenterX = xTotal / kCalibrationSamples;
   joyCenterY = yTotal / kCalibrationSamples;
   Serial.printf("Joystick center: x=%d y=%d\n", joyCenterX, joyCenterY);
+  return true;
+}
+
+void tryInitNunchuck() {
+  if (initNunchuck()) {
+    if (markNunchuckReady()) {
+      return;
+    }
+    return;
+  }
+
+  nunchuckReady = false;
+  nunchuckReadFault = false;
+  Serial.println("Nunchuck init failed. Check 3V3, GND, SDA, and SCL wiring.");
 }
 
 int applyDeadzone(int value) {
@@ -186,6 +273,11 @@ void sendMouseReport(uint8_t buttons, int8_t dx, int8_t dy, int8_t wheel = 0) {
   };
   mouseInput->setValue(report, sizeof(report));
   mouseInput->notify();
+}
+
+void sendNeutralMouseReport() {
+  sendMouseReport(0, 0, 0, 0);
+  neutralReportPending = false;
 }
 
 void setupBleMouse() {
@@ -231,21 +323,35 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
+  statusLed.begin();
+  statusLed.setBrightness(kStatusLedBrightness);
+  showStatusColor(0, 0, 12);
+
   Wire.begin(kSdaPin, kSclPin);
   Wire.setClock(kI2cClockHz);
 
-  if (!initNunchuck()) {
-    Serial.println("Nunchuck init failed. Check 3V3, GND, SDA, and SCL wiring.");
-  } else {
-    Serial.println("Nunchuck detected");
-    calibrateJoystick();
-  }
+  tryInitNunchuck();
 
   setupBleMouse();
 }
 
 void loop() {
+  updateStatusLed();
+
   const uint32_t now = millis();
+  if (!nunchuckReady) {
+    if (now - lastNunchuckRetryMs >= kNunchuckRetryMs) {
+      lastNunchuckRetryMs = now;
+      tryInitNunchuck();
+    }
+    delay(5);
+    return;
+  }
+
+  if (neutralReportPending) {
+    sendNeutralMouseReport();
+  }
+
   if (now - lastPollMs < kPollIntervalMs) {
     delay(1);
     return;
@@ -254,10 +360,12 @@ void loop() {
 
   NunchuckState state;
   if (!readNunchuck(state)) {
+    nunchuckReadFault = true;
     sendMouseReport(0, 0, 0, 0);
     delay(25);
     return;
   }
+  nunchuckReadFault = false;
 
   const int rawX = static_cast<int>(state.joyX) - joyCenterX;
   const int rawY = static_cast<int>(state.joyY) - joyCenterY;

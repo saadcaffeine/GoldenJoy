@@ -40,10 +40,10 @@ Default wiring:
 | --- | --- |
 | VCC | 3V3 |
 | GND | GND |
-| SDA | GPIO 8 |
-| SCL | GPIO 9 |
+| SDA | GPIO 4 |
+| SCL | GPIO 5 |
 
-If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` and `kSclPin` in `src/main.cpp`.
+GPIO 8 is reserved for the onboard addressable RGB status LED on the ESP32-C3-DevKitM-1. If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` and `kSclPin` in `src/main.cpp`.
 
 ## Controls
 
@@ -52,6 +52,17 @@ If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` a
 - C button: right click
 
 On boot, leave the joystick untouched for about one second while the firmware calibrates the resting center.
+
+## Status LED
+
+On the ESP32-C3-DevKitM-1, the onboard RGB LED is used for basic device status:
+
+- Blinking yellow: Nunchuck not detected
+- Blinking blue: Bluetooth advertising / not connected
+- Solid green: Bluetooth connected
+- Blinking red: Nunchuck I2C read failure
+
+If your board does not have an onboard WS2812-style RGB LED on GPIO 8, update `kStatusLedPin` or remove the status LED code in `src/main.cpp`.
 
 ## Accessibility Tuning
 
