@@ -79,3 +79,7 @@ After flashing, pair the device named `GoldenJoy Mouse` from the host computer o
 ## Status
 
 The firmware builds for `esp32-c3-devkitm-1` and implements the basic mouse behavior. Real-world accessibility use will need person-specific tuning and hardware mounting work.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
