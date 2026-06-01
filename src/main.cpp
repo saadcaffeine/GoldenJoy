@@ -1,5 +1,17 @@
 #include <Arduino.h>
+
+#ifndef GOLDENJOY_STATUS_LED_RGB
+#define GOLDENJOY_STATUS_LED_RGB 1
+#endif
+
+#ifndef GOLDENJOY_STATUS_LED_ACTIVE_LOW
+#define GOLDENJOY_STATUS_LED_ACTIVE_LOW 0
+#endif
+
+#if GOLDENJOY_STATUS_LED_RGB
 #include <Adafruit_NeoPixel.h>
+#endif
+
 #include <NimBLEDevice.h>
 #include <NimBLEHIDDevice.h>
 #include <Wire.h>
@@ -15,8 +27,10 @@ constexpr int kSclPin = 5;
 constexpr uint32_t kI2cClockHz = 400000;
 
 constexpr int kStatusLedPin = 8;
+#if GOLDENJOY_STATUS_LED_RGB
 constexpr int kStatusLedCount = 1;
 constexpr uint8_t kStatusLedBrightness = 24;
+#endif
 
 constexpr uint16_t kPollIntervalMs = 10;
 constexpr uint16_t kCalibrationSamples = 80;
@@ -33,7 +47,10 @@ constexpr bool kCIsRightClick = true;
 
 NimBLEHIDDevice* hidDevice = nullptr;
 NimBLECharacteristic* mouseInput = nullptr;
+
+#if GOLDENJOY_STATUS_LED_RGB
 Adafruit_NeoPixel statusLed(kStatusLedCount, kStatusLedPin, NEO_GRB + NEO_KHZ800);
+#endif
 
 bool bleConnected = false;
 bool nunchuckReady = false;
@@ -44,7 +61,11 @@ int joyCenterX = 128;
 int joyCenterY = 128;
 uint32_t lastPollMs = 0;
 uint32_t lastNunchuckRetryMs = 0;
+#if GOLDENJOY_STATUS_LED_RGB
 uint32_t lastStatusColor = 0xFFFFFFFF;
+#else
+bool lastStatusLedOn = false;
+#endif
 
 const uint8_t kMouseReportMap[] = {
     0x05, 0x01,        // Usage Page (Generic Desktop)
@@ -102,7 +123,31 @@ struct NunchuckState {
   bool cPressed = false;
 };
 
+void showStatusColor(uint8_t red, uint8_t green, uint8_t blue);
+
+void beginStatusLed() {
+#if GOLDENJOY_STATUS_LED_RGB
+  statusLed.begin();
+  statusLed.setBrightness(kStatusLedBrightness);
+#else
+  pinMode(kStatusLedPin, OUTPUT);
+#endif
+}
+
+void showStatusLed(bool on) {
+#if GOLDENJOY_STATUS_LED_RGB
+  showStatusColor(0, 0, on ? 12 : 0);
+#else
+  if (on == lastStatusLedOn) {
+    return;
+  }
+  digitalWrite(kStatusLedPin, on == GOLDENJOY_STATUS_LED_ACTIVE_LOW ? LOW : HIGH);
+  lastStatusLedOn = on;
+#endif
+}
+
 void showStatusColor(uint8_t red, uint8_t green, uint8_t blue) {
+#if GOLDENJOY_STATUS_LED_RGB
   const uint32_t color = statusLed.Color(red, green, blue);
   if (color == lastStatusColor) {
     return;
@@ -111,11 +156,15 @@ void showStatusColor(uint8_t red, uint8_t green, uint8_t blue) {
   statusLed.setPixelColor(0, color);
   statusLed.show();
   lastStatusColor = color;
+#else
+  showStatusLed(red > 0 || green > 0 || blue > 0);
+#endif
 }
 
 void updateStatusLed() {
   const uint32_t now = millis();
 
+#if GOLDENJOY_STATUS_LED_RGB
   if (!nunchuckReady) {
     const bool on = (now / 500) % 2 == 0;
     showStatusColor(on ? 24 : 0, on ? 18 : 0, 0);
@@ -135,6 +184,24 @@ void updateStatusLed() {
   }
 
   showStatusColor(0, 24, 0);
+#else
+  if (!nunchuckReady) {
+    showStatusLed(now % 1000 < 100);
+    return;
+  }
+
+  if (nunchuckReadFault) {
+    showStatusLed((now / 125) % 2 == 0);
+    return;
+  }
+
+  if (!bleConnected) {
+    showStatusLed((now / 500) % 2 == 0);
+    return;
+  }
+
+  showStatusLed(true);
+#endif
 }
 
 bool writeNunchuckRegister(uint8_t reg, uint8_t value) {
@@ -323,9 +390,8 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  statusLed.begin();
-  statusLed.setBrightness(kStatusLedBrightness);
-  showStatusColor(0, 0, 12);
+  beginStatusLed();
+  showStatusLed(true);
 
   Wire.begin(kSdaPin, kSclPin);
   Wire.setClock(kI2cClockHz);

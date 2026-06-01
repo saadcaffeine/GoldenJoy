@@ -34,6 +34,13 @@ Key differences:
 - Nunchuck breakout or adapter cable
 - 3.3 V power only. Do not feed the Nunchuck 5 V.
 
+Supported PlatformIO environments:
+
+| Environment | Board style | Status LED |
+| --- | --- | --- |
+| `esp32-c3-devkitm-1` | Espressif ESP32-C3-DevKitM-1 | GPIO 8 RGB NeoPixel |
+| `esp32-c3-supermini` | ESP32-C3 SuperMini-style boards | GPIO 8 active-low blue LED |
+
 Default wiring:
 
 | Nunchuck | ESP32-C3 |
@@ -62,7 +69,14 @@ On the ESP32-C3-DevKitM-1, the onboard RGB LED is used for basic device status:
 - Solid green: Bluetooth connected
 - Blinking red: Nunchuck I2C read failure
 
-If your board does not have an onboard WS2812-style RGB LED on GPIO 8, update `kStatusLedPin` or remove the status LED code in `src/main.cpp`.
+On the ESP32-C3 SuperMini environment, the common GPIO 8 blue LED is used instead:
+
+- Short pulse: Nunchuck not detected
+- Slow blink: Bluetooth advertising / not connected
+- Solid on: Bluetooth connected
+- Fast blink: Nunchuck I2C read failure
+
+If your board uses a different LED pin or polarity, update `kStatusLedPin`, `GOLDENJOY_STATUS_LED_RGB`, or `GOLDENJOY_STATUS_LED_ACTIVE_LOW`.
 
 ## Accessibility Tuning
 
@@ -83,6 +97,13 @@ This project uses PlatformIO:
 ```sh
 python3 -m platformio run
 python3 -m platformio run --target upload
+```
+
+For an ESP32-C3 SuperMini, build or upload the `esp32-c3-supermini` environment:
+
+```sh
+python3 -m platformio run -e esp32-c3-supermini
+python3 -m platformio run -e esp32-c3-supermini --target upload
 ```
 
 After flashing, pair the device named `GoldenJoy Mouse` from the host computer or tablet Bluetooth settings.
