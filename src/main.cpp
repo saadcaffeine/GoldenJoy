@@ -22,7 +22,7 @@
 
 namespace {
 
-constexpr char kDeviceName[] = "GoldenJoy Mouse";
+constexpr char kDeviceName[] = "GoldenJoy BLE Mouse";
 constexpr char kManufacturer[] = "GoldenJoy";
 
 constexpr uint8_t kNunchuckAddress = 0x52;
@@ -433,7 +433,7 @@ void sendNeutralMouseReport() {
 void setupBleMouse() {
   NimBLEDevice::init(kDeviceName);
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
-  NimBLEDevice::setSecurityAuth(true, true, true);
+  NimBLEDevice::setSecurityAuth(true, false, true);
 
   bleServer = NimBLEDevice::createServer();
   bleServer->setCallbacks(new ServerCallbacks());
@@ -442,9 +442,10 @@ void setupBleMouse() {
   mouseInput = hidDevice->inputReport(1);
 
   hidDevice->manufacturer()->setValue(kManufacturer);
-  hidDevice->pnp(0x02, 0x05AC, 0x820A, 0x0210);
+  hidDevice->pnp(0x02, 0x303A, 0x4001, 0x0200);
   hidDevice->hidInfo(0x00, 0x01);
   hidDevice->reportMap(const_cast<uint8_t*>(kMouseReportMap), sizeof(kMouseReportMap));
+  hidDevice->setBatteryLevel(100);
   hidDevice->startServices();
 
   NimBLEAdvertising* advertising = NimBLEDevice::getAdvertising();

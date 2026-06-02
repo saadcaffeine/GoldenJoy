@@ -9,7 +9,7 @@ This is an experimental assistive technology project. It is meant to be tuned, r
 ## What It Does
 
 - Reads a Nintendo Nunchuck over I2C.
-- Advertises as a Bluetooth LE HID mouse named `GoldenJoy Mouse`.
+- Advertises as a Bluetooth LE HID mouse named `GoldenJoy BLE Mouse`.
 - Converts joystick motion into relative mouse movement.
 - Maps the Nunchuck buttons to mouse clicks.
 - Calibrates joystick center at boot.
@@ -115,7 +115,20 @@ python3 -m platformio run -e esp32-c3-supermini
 python3 -m platformio run -e esp32-c3-supermini --target upload
 ```
 
-After flashing, pair the device named `GoldenJoy Mouse` from the host computer or tablet Bluetooth settings.
+After flashing, pair the device named `GoldenJoy BLE Mouse` from the host computer or tablet Bluetooth settings.
+
+## iPad And iPhone Notes
+
+If you previously paired an older firmware version, remove `GoldenJoy Mouse` or `GoldenJoy BLE Mouse` from Bluetooth settings before pairing again. iOS and iPadOS can cache BLE HID service details, so re-pairing after firmware changes matters.
+
+For iPad, Apple documents Bluetooth mouse support on iPadOS 13.4 and later. Pair from Bluetooth settings, then move the joystick to show the circular pointer.
+
+For iPhone, connect the device through AssistiveTouch:
+
+1. Open Settings > Accessibility > Touch.
+2. Open AssistiveTouch > Devices > Bluetooth Devices.
+3. Select `GoldenJoy BLE Mouse`.
+4. Turn on AssistiveTouch so the pointer appears.
 
 ## Status
 
