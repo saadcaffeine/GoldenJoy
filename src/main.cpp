@@ -47,6 +47,7 @@ constexpr bool kCIsRightClick = true;
 
 NimBLEHIDDevice* hidDevice = nullptr;
 NimBLECharacteristic* mouseInput = nullptr;
+NimBLEServer* bleServer = nullptr;
 
 #if GOLDENJOY_STATUS_LED_RGB
 Adafruit_NeoPixel statusLed(kStatusLedCount, kStatusLedPin, NEO_GRB + NEO_KHZ800);
@@ -56,6 +57,7 @@ bool bleConnected = false;
 bool nunchuckReady = false;
 bool nunchuckReadFault = false;
 bool neutralReportPending = false;
+bool lastSyncedBleConnected = false;
 
 int joyCenterX = 128;
 int joyCenterY = 128;
@@ -100,18 +102,40 @@ const uint8_t kMouseReportMap[] = {
 
 bool calibrateJoystick();
 
+void setBleConnected(bool connected) {
+  if (bleConnected == connected) {
+    return;
+  }
+
+  bleConnected = connected;
+  neutralReportPending = connected;
+  Serial.println(connected ? "BLE central connected" : "BLE central disconnected");
+}
+
+void syncBleConnectionState() {
+  if (bleServer == nullptr) {
+    return;
+  }
+
+  const bool connected = bleServer->getConnectedCount() > 0;
+  if (connected == lastSyncedBleConnected) {
+    return;
+  }
+
+  setBleConnected(connected);
+  lastSyncedBleConnected = connected;
+}
+
 class ServerCallbacks final : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* server) override {
     (void)server;
-    bleConnected = true;
-    neutralReportPending = true;
-    Serial.println("BLE central connected");
+    setBleConnected(true);
+    lastSyncedBleConnected = true;
   }
 
   void onDisconnect(NimBLEServer*) override {
-    bleConnected = false;
-    neutralReportPending = false;
-    Serial.println("BLE central disconnected");
+    setBleConnected(false);
+    lastSyncedBleConnected = false;
     NimBLEDevice::startAdvertising();
   }
 };
@@ -352,10 +376,10 @@ void setupBleMouse() {
   NimBLEDevice::setPower(ESP_PWR_LVL_P9);
   NimBLEDevice::setSecurityAuth(true, true, true);
 
-  NimBLEServer* server = NimBLEDevice::createServer();
-  server->setCallbacks(new ServerCallbacks());
+  bleServer = NimBLEDevice::createServer();
+  bleServer->setCallbacks(new ServerCallbacks());
 
-  hidDevice = new NimBLEHIDDevice(server);
+  hidDevice = new NimBLEHIDDevice(bleServer);
   mouseInput = hidDevice->inputReport(1);
 
   hidDevice->manufacturer()->setValue(kManufacturer);
@@ -402,6 +426,7 @@ void setup() {
 }
 
 void loop() {
+  syncBleConnectionState();
   updateStatusLed();
 
   const uint32_t now = millis();
