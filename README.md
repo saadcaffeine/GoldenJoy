@@ -73,15 +73,15 @@ On boot, leave the joystick untouched for about one second while the firmware ca
 
 On the ESP32-C3-DevKitM-1, the onboard RGB LED is used for basic device status:
 
-- Blinking yellow: Nunchuck not detected
 - Blinking blue: Bluetooth advertising / not connected
+- Blinking yellow: Bluetooth connected, Nunchuck not detected
 - Solid green: Bluetooth connected
 - Blinking red: Nunchuck I2C read failure
 
 On the ESP32-C3 SuperMini environment, the common GPIO 8 blue LED is used instead:
 
-- Double blink: Nunchuck not detected
 - Slow blink: Bluetooth advertising / not connected
+- Double blink: Bluetooth connected, Nunchuck not detected
 - Solid on: Bluetooth connected
 - Fast blink: Nunchuck I2C read failure
 

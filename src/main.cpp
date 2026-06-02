@@ -189,6 +189,12 @@ void updateStatusLed() {
   const uint32_t now = millis();
 
 #if GOLDENJOY_STATUS_LED_RGB
+  if (!bleConnected) {
+    const bool on = (now / 500) % 2 == 0;
+    showStatusColor(0, 0, on ? 24 : 0);
+    return;
+  }
+
   if (!nunchuckReady) {
     const bool on = (now / 500) % 2 == 0;
     showStatusColor(on ? 24 : 0, on ? 18 : 0, 0);
@@ -201,14 +207,13 @@ void updateStatusLed() {
     return;
   }
 
+  showStatusColor(0, 24, 0);
+#else
   if (!bleConnected) {
-    const bool on = (now / 500) % 2 == 0;
-    showStatusColor(0, 0, on ? 24 : 0);
+    showStatusLed((now / 500) % 2 == 0);
     return;
   }
 
-  showStatusColor(0, 24, 0);
-#else
   if (!nunchuckReady) {
     const uint16_t phase = now % 1000;
     showStatusLed(phase < 100 || (phase >= 200 && phase < 300));
@@ -217,11 +222,6 @@ void updateStatusLed() {
 
   if (nunchuckReadFault) {
     showStatusLed((now / 125) % 2 == 0);
-    return;
-  }
-
-  if (!bleConnected) {
-    showStatusLed((now / 500) % 2 == 0);
     return;
   }
 
