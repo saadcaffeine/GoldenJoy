@@ -123,6 +123,8 @@ If you previously paired an older firmware version, remove `GoldenJoy Mouse` or 
 
 For iPad, Apple documents Bluetooth mouse support on iPadOS 13.4 and later. Pair from Bluetooth settings, then move the joystick to show the circular pointer.
 
+The firmware also publishes a Boot Mouse Input Report characteristic for older iPadOS releases that may be stricter about HID-over-GATT mouse compatibility.
+
 For iPhone, connect the device through AssistiveTouch:
 
 1. Open Settings > Accessibility > Touch.

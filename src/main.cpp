@@ -54,6 +54,7 @@ constexpr bool kCIsRightClick = true;
 
 NimBLEHIDDevice* hidDevice = nullptr;
 NimBLECharacteristic* mouseInput = nullptr;
+NimBLECharacteristic* bootMouseInput = nullptr;
 NimBLEServer* bleServer = nullptr;
 
 #if GOLDENJOY_STATUS_LED_RGB
@@ -423,6 +424,16 @@ void sendMouseReport(uint8_t buttons, int8_t dx, int8_t dy, int8_t wheel = 0) {
   };
   mouseInput->setValue(report, sizeof(report));
   mouseInput->notify();
+
+  if (bootMouseInput != nullptr) {
+    uint8_t bootReport[] = {
+        buttons,
+        static_cast<uint8_t>(dx),
+        static_cast<uint8_t>(dy),
+    };
+    bootMouseInput->setValue(bootReport, sizeof(bootReport));
+    bootMouseInput->notify();
+  }
 }
 
 void sendNeutralMouseReport() {
@@ -440,6 +451,9 @@ void setupBleMouse() {
 
   hidDevice = new NimBLEHIDDevice(bleServer);
   mouseInput = hidDevice->inputReport(1);
+  bootMouseInput = hidDevice->hidService()->createCharacteristic(
+      static_cast<uint16_t>(0x2A33),
+      NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC);
 
   hidDevice->manufacturer()->setValue(kManufacturer);
   hidDevice->pnp(0x02, 0x303A, 0x4001, 0x0200);
