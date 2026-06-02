@@ -27,6 +27,15 @@ Key differences:
 - GoldenJoy calibrates joystick center at boot; the reference project assumes the joystick center is near 127.
 - GoldenJoy currently uses a conservative linear pointer response; the reference project uses an acceleration lookup table.
 
+## References
+
+- [USB Compatible Wii Nunchuk Conversion](https://www.instructables.com/USB-Compatible-Wii-Nunchuk-Conversion/)
+- [ANAVI Handle](https://www.crowdsupply.com/anavi-technology/anavi-handle)
+- [Adafruit Wii Nunchuck Breakout Adapter - Qwiic / STEMMA QT](https://www.adafruit.com/product/4836#technical-details)
+- [Nunchuck Connector Housing](https://www.printables.com/model/1256857-nunchuck-connector-housing)
+- [Wii Nunchuck BLE Adapter](https://www.printables.com/model/981679-wii-nunchuck-ble-adapter#building-instructions-)
+- [Wii Nunchuck USB Adapter](https://adafruit-playground.com/u/squid_jpg/pages/wii-nunchuck-usb-adapter)
+
 ## Hardware
 
 - ESP32-C3 development board
