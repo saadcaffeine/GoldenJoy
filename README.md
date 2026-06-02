@@ -50,20 +50,6 @@ Default wiring:
 | SDA | GPIO 4 |
 | SCL | GPIO 5 |
 
-Nunchuck connector pinout, viewed from the connector face with the notch at the top:
-
-```text
-[  NOTCH  ]
-   +---------------+
-   |  (1)   (2)    |   Pin 1: Data (SDA)
-   |               |   Pin 2: Not Used (NC)
-   |  (3)   (4)    |   Pin 3: Power (3.3V)
-   |               |   Pin 4: Clock (SCL)
-   |  (5)   (6)    |   Pin 5: Not Used (NC)
-   |               |   Pin 6: Ground (GND)
-   +---------------+
-```
-
 GPIO 8 is reserved for the onboard addressable RGB status LED on the ESP32-C3-DevKitM-1. If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` and `kSclPin` in `src/main.cpp`.
 
 ## Controls
