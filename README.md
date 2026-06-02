@@ -56,8 +56,8 @@ Default wiring:
 | --- | --- |
 | VCC | 3V3 |
 | GND | GND |
-| SDA | GPIO 4 |
-| SCL | GPIO 5 |
+| SDA | GPIO 5 |
+| SCL | GPIO 4 |
 
 GPIO 8 is reserved for the onboard addressable RGB status LED on the ESP32-C3-DevKitM-1. If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` and `kSclPin` in `src/main.cpp`.
 

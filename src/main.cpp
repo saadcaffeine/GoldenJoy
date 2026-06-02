@@ -8,6 +8,10 @@
 #define GOLDENJOY_STATUS_LED_ACTIVE_LOW 0
 #endif
 
+#ifndef GOLDENJOY_I2C_DIAGNOSTICS
+#define GOLDENJOY_I2C_DIAGNOSTICS 0
+#endif
+
 #if GOLDENJOY_STATUS_LED_RGB
 #include <Adafruit_NeoPixel.h>
 #endif
@@ -22,8 +26,8 @@ constexpr char kDeviceName[] = "GoldenJoy Mouse";
 constexpr char kManufacturer[] = "GoldenJoy";
 
 constexpr uint8_t kNunchuckAddress = 0x52;
-constexpr int kSdaPin = 4;
-constexpr int kSclPin = 5;
+constexpr int kSdaPin = 5;
+constexpr int kSclPin = 4;
 constexpr uint32_t kI2cClockHz = 400000;
 
 constexpr int kStatusLedPin = 8;
@@ -35,6 +39,9 @@ constexpr uint8_t kStatusLedBrightness = 24;
 constexpr uint16_t kPollIntervalMs = 10;
 constexpr uint16_t kCalibrationSamples = 80;
 constexpr uint16_t kNunchuckRetryMs = 1000;
+#if GOLDENJOY_I2C_DIAGNOSTICS
+constexpr uint16_t kI2cDiagnosticIntervalMs = 5000;
+#endif
 
 constexpr int kDeadzone = 9;
 constexpr float kPointerGain = 0.11f;
@@ -63,6 +70,9 @@ int joyCenterX = 128;
 int joyCenterY = 128;
 uint32_t lastPollMs = 0;
 uint32_t lastNunchuckRetryMs = 0;
+#if GOLDENJOY_I2C_DIAGNOSTICS
+uint32_t lastI2cDiagnosticMs = 0;
+#endif
 #if GOLDENJOY_STATUS_LED_RGB
 uint32_t lastStatusColor = 0xFFFFFFFF;
 #else
@@ -235,6 +245,54 @@ bool writeNunchuckRegister(uint8_t reg, uint8_t value) {
   Wire.write(value);
   return Wire.endTransmission(true) == 0;
 }
+
+#if GOLDENJOY_I2C_DIAGNOSTICS
+bool scanI2cAddress(uint8_t address) {
+  Wire.beginTransmission(address);
+  return Wire.endTransmission(true) == 0;
+}
+
+void runI2cDiagnostics() {
+  static constexpr int kPinPairs[][2] = {
+      {kSdaPin, kSclPin},
+      {kSclPin, kSdaPin},
+      {0, 1},
+      {1, 0},
+      {2, 3},
+      {3, 2},
+      {6, 7},
+      {7, 6},
+      {8, 9},
+      {9, 8},
+  };
+
+  Serial.println("I2C diagnostic scan for Nunchuck address 0x52:");
+  bool found = false;
+  for (const auto& pair : kPinPairs) {
+    Wire.end();
+    delay(2);
+    Wire.begin(pair[0], pair[1]);
+    Wire.setClock(kI2cClockHz);
+    delay(2);
+
+    if (scanI2cAddress(kNunchuckAddress)) {
+      Serial.printf("  Found 0x52 on SDA GPIO %d / SCL GPIO %d\n", pair[0], pair[1]);
+      found = true;
+    } else {
+      Serial.printf("  No 0x52 on SDA GPIO %d / SCL GPIO %d\n", pair[0], pair[1]);
+    }
+  }
+
+  Wire.end();
+  delay(2);
+  Wire.begin(kSdaPin, kSclPin);
+  Wire.setClock(kI2cClockHz);
+
+  if (!found) {
+    Serial.println("  No Nunchuck detected on tested I2C pin pairs.");
+  }
+}
+#endif
 
 bool initNunchuck() {
   delay(100);
@@ -436,6 +494,12 @@ void loop() {
       lastNunchuckRetryMs = now;
       tryInitNunchuck();
     }
+#if GOLDENJOY_I2C_DIAGNOSTICS
+    if (now - lastI2cDiagnosticMs >= kI2cDiagnosticIntervalMs) {
+      lastI2cDiagnosticMs = now;
+      runI2cDiagnostics();
+    }
+#endif
     delay(5);
     return;
   }
