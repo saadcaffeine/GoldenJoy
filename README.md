@@ -80,7 +80,7 @@ On the ESP32-C3-DevKitM-1, the onboard RGB LED is used for basic device status:
 
 On the ESP32-C3 SuperMini environment, the common GPIO 8 blue LED is used instead:
 
-- Short pulse: Nunchuck not detected
+- Double blink: Nunchuck not detected
 - Slow blink: Bluetooth advertising / not connected
 - Solid on: Bluetooth connected
 - Fast blink: Nunchuck I2C read failure

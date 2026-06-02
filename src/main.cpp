@@ -210,7 +210,8 @@ void updateStatusLed() {
   showStatusColor(0, 24, 0);
 #else
   if (!nunchuckReady) {
-    showStatusLed(now % 1000 < 100);
+    const uint16_t phase = now % 1000;
+    showStatusLed(phase < 100 || (phase >= 200 && phase < 300));
     return;
   }
 
