@@ -117,6 +117,15 @@ python3 -m platformio run -e esp32-c3-supermini --target upload
 
 After flashing, pair the device named `GoldenJoy BLE Mouse` from the host computer or tablet Bluetooth settings.
 
+For older iPads that pair but do not move the pointer, use the legacy iPad SuperMini environment:
+
+```sh
+python3 -m platformio run -e esp32-c3-supermini-legacy-ipad
+python3 -m platformio run -e esp32-c3-supermini-legacy-ipad --target upload
+```
+
+This variant advertises as `GoldenJoy iPad Mouse` and uses a minimal 3-byte mouse report without a Report ID or scroll wheel.
+
 ## iPad And iPhone Notes
 
 If you previously paired an older firmware version, remove `GoldenJoy Mouse` or `GoldenJoy BLE Mouse` from Bluetooth settings before pairing again. iOS and iPadOS can cache BLE HID service details, so re-pairing after firmware changes matters.
