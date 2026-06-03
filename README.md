@@ -33,6 +33,7 @@ Key differences:
 - [ANAVI Handle](https://www.crowdsupply.com/anavi-technology/anavi-handle)
 - [Adafruit Wii Nunchuck Breakout Adapter - Qwiic / STEMMA QT](https://www.adafruit.com/product/4836#technical-details)
 - [Nunchuck Connector Housing](https://www.printables.com/model/1256857-nunchuck-connector-housing)
+- [Wii Nunchuck DIY Connector](https://www.printables.com/model/1743535-wii-nunchuck-diy-connector)
 - [Wii Nunchuck BLE Adapter](https://www.printables.com/model/981679-wii-nunchuck-ble-adapter#building-instructions-)
 - [Wii Nunchuck USB Adapter](https://adafruit-playground.com/u/squid_jpg/pages/wii-nunchuck-usb-adapter)
 
@@ -42,6 +43,8 @@ Key differences:
 - Nintendo Wii Nunchuck controller
 - Nunchuck breakout or adapter cable
 - 3.3 V power only. Do not feed the Nunchuck 5 V.
+
+For quick prototyping, the [Wii Nunchuck DIY Connector](https://www.printables.com/model/1743535-wii-nunchuck-diy-connector) is a 3D-printable way to make a temporary Nunchuck connector using just header pins. For longer-term builds, commercially available PCB breakout boards or adapter cables are a better fit.
 
 Supported PlatformIO environments:
 
