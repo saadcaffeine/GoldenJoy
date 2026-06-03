@@ -6,6 +6,8 @@ The goal is to provide a small, low-cost, adaptable pointing device for accessib
 
 This is an experimental assistive technology project. It is meant to be tuned, remapped, mounted, and adapted to the person using it.
 
+![Assembled GoldenJoy prototype with a Wii Nunchuck, 3D printed connector, jumper wires, and ESP32-C3 board](docs/images/assembled-prototype.jpg)
+
 ## What It Does
 
 - Reads a Nintendo Nunchuck over I2C.
@@ -46,6 +48,10 @@ Key differences:
 
 For quick prototyping, the [Wii Nunchuck DIY Connector](https://www.printables.com/model/1743535-wii-nunchuck-diy-connector) is a 3D-printable way to make a temporary Nunchuck connector using just header pins. For longer-term builds, commercially available PCB breakout boards or adapter cables are a better fit.
 
+![3D printed Wii Nunchuck connector beside loose header pins used for a temporary DIY connector](docs/images/3d-printed-connector.jpg)
+
+![Header-pin connector setup inserted into a Wii Nunchuck extension socket](docs/images/connector-header-pin-setup.jpg)
+
 Supported PlatformIO environments:
 
 | Environment | Board style | Status LED |
@@ -63,6 +69,8 @@ Default wiring:
 | SCL | GPIO 4 |
 
 GPIO 8 is reserved for the onboard addressable RGB status LED on the ESP32-C3-DevKitM-1. If your ESP32-C3 board exposes different convenient I2C pins, update `kSdaPin` and `kSclPin` in `src/main.cpp`.
+
+![ESP32-C3 SuperMini wired to the Nunchuck connector with SDA, SCL, power, and ground leads](docs/images/esp32-c3-wiring.jpg)
 
 ## Controls
 
