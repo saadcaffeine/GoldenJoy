@@ -108,7 +108,7 @@ The main tuning constants are near the top of `src/main.cpp`:
 - `kInvertX` / `kInvertY`: flips movement direction
 - `kZIsLeftClick` / `kCIsRightClick`: changes button mapping behavior
 
-The default tuning is responsive, with a very small deadzone for typical mouse use. Lower `kPointerGain` or `kMaxStep` to make the pointer calmer. Increase `kDeadzone` if the cursor drifts while the joystick is at rest.
+The default tuning uses no deadzone so pointer movement starts immediately, with a moderate gain and movement cap for smoother control. Lower `kPointerGain` or `kMaxStep` to make the pointer calmer. Increase `kDeadzone` if the cursor drifts while the joystick is at rest.
 
 ## Build And Upload
 

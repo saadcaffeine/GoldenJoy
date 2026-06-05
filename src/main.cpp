@@ -51,9 +51,9 @@ constexpr uint16_t kNunchuckRetryMs = 1000;
 constexpr uint16_t kI2cDiagnosticIntervalMs = 5000;
 #endif
 
-constexpr int kDeadzone = 1;
-constexpr float kPointerGain = 0.18f;
-constexpr int kMaxStep = 18;
+constexpr int kDeadzone = 0;
+constexpr float kPointerGain = 0.14f;
+constexpr int kMaxStep = 14;
 constexpr bool kInvertX = false;
 constexpr bool kInvertY = true;
 
